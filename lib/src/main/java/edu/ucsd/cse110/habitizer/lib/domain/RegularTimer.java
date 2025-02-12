@@ -50,12 +50,11 @@ public class RegularTimer implements ElapsedTimer {
     @Override
     public String getTime() {
         // Casting with (int) should handle, but will check later
-        int hours = (int)(secondsElapsed / 3600); // Will be an integer because of casting, should not have to worry about double casting
         int minutes = (int)((secondsElapsed % 3600) / 60); // Same idea here
         int seconds = (int)(secondsElapsed % 60);
 
         // Redundant, but nice to reformatting just in case in my opinion
-        String message = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        String message = String.format("%02d:%02d", minutes, seconds);
         return message;
     }
 

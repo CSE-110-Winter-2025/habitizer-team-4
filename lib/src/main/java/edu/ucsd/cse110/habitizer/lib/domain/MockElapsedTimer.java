@@ -31,11 +31,10 @@ public class MockElapsedTimer implements ElapsedTimer {
         if (this.isRunning == false || Objects.isNull(start)) return;
 
         // Calculating the time between when the "timer" started and now
-        duration = duration.plus(Duration.between(
-                (LocalTime) start, LocalTime.now()
-        ));
+        duration = duration.plus(Duration.between((LocalTime) start, LocalTime.now()));
 
         this.isRunning = false;
+        start = null;
     }
 
     @Override
@@ -44,21 +43,19 @@ public class MockElapsedTimer implements ElapsedTimer {
 
         // Calculating the time between when the "timer" started and now
         if (this.isRunning == true && Objects.nonNull(start)) {
-            currDuration = duration.plus(Duration.between(
-                    (LocalTime) start, LocalTime.now()
-            ));
+            currDuration = duration.plus(Duration.between((LocalTime) start, LocalTime.now()));
+            start = LocalTime.now();
         }
 
         // Duration class returns long integers, have to convert
         var longSeconds = currDuration.getSeconds();
 
         // int casting should handle conversion but will check more later
-        int hours = (int)(longSeconds / 3600);
         int minutes = (int)((longSeconds % 3600) / 60);
         int seconds = (int)(longSeconds % 60);
 
         // Redundant, but helps debug imo
-        String message = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        String message = String.format("%02d:%02d", minutes, seconds);
         return message;
     }
 
