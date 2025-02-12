@@ -66,4 +66,9 @@ public class MockElapsedTimer implements ElapsedTimer {
     public void advanceTimer() {
         this.duration = this.duration.plusSeconds(30);
     }
+
+    // For testing purposes
+    public boolean isRunning() {
+        return isRunning;
+    }
 }

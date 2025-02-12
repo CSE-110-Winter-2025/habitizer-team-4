@@ -58,4 +58,9 @@ public class RegularTimer implements ElapsedTimer {
         String message = String.format("%02d:%02d:%02d", hours, minutes, seconds);
         return message;
     }
+
+    // For testing purposes
+    public boolean isRunning() {
+        return isRunning;
+    }
 }
