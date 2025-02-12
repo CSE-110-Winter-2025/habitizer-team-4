@@ -53,13 +53,13 @@ public class MockElapsedTimer implements ElapsedTimer {
         var longSeconds = currDuration.getSeconds();
 
         // int casting should handle conversion but will check more later
-        int hours = (int)(longSeconds / 3600);
+        //int hours = (int)(longSeconds / 3600);
         int minutes = (int)((longSeconds % 3600) / 60);
-        int seconds = (int)(longSeconds % 60);
+        //int seconds = (int)(longSeconds % 60);
 
         // Redundant, but helps debug imo
-        String message = String.format("%02d:%02d:%02d", hours, minutes, seconds);
-        return message;
+        //String message = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        return String.format("%01d", minutes);
     }
 
     // Advances the timer by 30 seconds

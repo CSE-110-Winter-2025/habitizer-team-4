@@ -21,7 +21,7 @@ public class RegularTimer implements ElapsedTimer {
     @Override
     public void startTimer() {
         // Should handle starting the timer again even if the timer has already been started
-        if (this.isRunning == true) return;
+        if (this.isRunning) return;
 
         this.timer = new Timer();
 
@@ -50,13 +50,13 @@ public class RegularTimer implements ElapsedTimer {
     @Override
     public String getTime() {
         // Casting with (int) should handle, but will check later
-        int hours = (int)(secondsElapsed / 3600); // Will be an integer because of casting, should not have to worry about double casting
+        //int hours = (int)(secondsElapsed / 3600); // Will be an integer because of casting, should not have to worry about double casting
         int minutes = (int)((secondsElapsed % 3600) / 60); // Same idea here
-        int seconds = (int)(secondsElapsed % 60);
+        //int seconds = (int)(secondsElapsed % 60);
 
         // Redundant, but nice to reformatting just in case in my opinion
-        String message = String.format("%02d:%02d:%02d", hours, minutes, seconds);
-        return message;
+        //String message = String.format("%02d:%02d:%02d", hours, minutes, seconds);
+        return String.format("%01d", minutes);
     }
 
     // For testing purposes

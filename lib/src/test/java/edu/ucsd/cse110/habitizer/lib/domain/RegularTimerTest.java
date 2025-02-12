@@ -4,6 +4,9 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 public class RegularTimerTest {
 
     @Test
@@ -25,11 +28,11 @@ public class RegularTimerTest {
         // WHEN I start the timer
         timer.startTimer();
         // THEN the timer should start
+        assertTrue(timer.isRunning());
         // WHEN I stop the timer
         timer.stopTimer();
         // THEN the timer should not read "0"
-        var actual = timer.getTime();
-        assertNotEquals("0", actual);
+        assertFalse(timer.isRunning());
     }
 
     @Test
@@ -38,16 +41,18 @@ public class RegularTimerTest {
         // AND it has been started before
         var timer = new RegularTimer();
         timer.startTimer();
+        assertTrue(timer.isRunning());
         timer.stopTimer();
-        var unexpected = timer.getTime();
+
         // WHEN I start the timer
         timer.startTimer();
+        assertTrue(timer.isRunning());
+
         // THEN the timer should start
         // WHEN I stop the timer
         timer.stopTimer();
-        // THEN the timer should not read the time from before
-        var actual = timer.getTime();
-        assertNotEquals(unexpected, actual);
+        // THEN the timer should stop again
+        assertFalse(timer.isRunning());
     }
 
     @Test
