@@ -19,7 +19,7 @@ public class MockElapsedTimer implements ElapsedTimer {
     @Override
     public void startTimer() {
         // Handles if the timer is already started
-        if (this.isRunning == true) return;
+        if (this.isRunning) return;
 
         start = LocalTime.now();
         isRunning = true;
@@ -28,14 +28,13 @@ public class MockElapsedTimer implements ElapsedTimer {
     @Override
     public void stopTimer() {
         // Handles if the timer isn't running yet
-        if (this.isRunning == false || Objects.isNull(start)) return;
+        if (!this.isRunning || Objects.isNull(start)) return;
 
         // Calculating the time between when the "timer" started and now
-        duration = duration.plus(Duration.between(
-                (LocalTime) start, LocalTime.now()
-        ));
+        duration = duration.plus(Duration.between((LocalTime) start, LocalTime.now()));
 
         this.isRunning = false;
+        start = null;
     }
 
     @Override
@@ -43,10 +42,9 @@ public class MockElapsedTimer implements ElapsedTimer {
         Duration currDuration = duration;
 
         // Calculating the time between when the "timer" started and now
-        if (this.isRunning == true && Objects.nonNull(start)) {
-            currDuration = duration.plus(Duration.between(
-                    (LocalTime) start, LocalTime.now()
-            ));
+        if (this.isRunning && Objects.nonNull(start)) {
+            currDuration = duration.plus(Duration.between((LocalTime) start, LocalTime.now()));
+            start = LocalTime.now();
         }
 
         // Duration class returns long integers, have to convert
