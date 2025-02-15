@@ -62,6 +62,8 @@ public class EditTaskNameDialogFragment extends DialogFragment {
                 .setNegativeButton("Cancel", this::onNegativeButtonClick)
                 .create();
 
+        view.editTaskName.setText(this.taskTitle);
+
         dialog.setOnShowListener(d -> {
             Button positiveButton = ((AlertDialog) d).getButton(AlertDialog.BUTTON_POSITIVE);
             positiveButton.setOnClickListener(v -> onPositiveButtonClick(dialog,0));
