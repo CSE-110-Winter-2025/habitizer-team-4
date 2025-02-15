@@ -25,7 +25,7 @@ public class MockElapsedTimer implements ElapsedTimer {
     @Override
     public void startTimer() {
         // Should handle starting the timer again even if the timer has already been started
-        if (isRunning == true) return;
+        if (isRunning) return;
 
         // For a fresh start, reset the duration and set start to now
         this.duration = Duration.ZERO;
@@ -37,7 +37,7 @@ public class MockElapsedTimer implements ElapsedTimer {
     public void stopTimer() {
         // If the timer is running, update the duration before stopping.
         if (isRunning && start != null) {
-            duration = duration.plus(Duration.between((LocalTime) start, LocalTime.now()));
+            duration = duration.plus(Duration.between(start, LocalTime.now()));
         }
         isRunning = false;
         start = null;       // Clear start to ensure getTime() returns the final duration.
@@ -49,7 +49,7 @@ public class MockElapsedTimer implements ElapsedTimer {
         if (!isRunning) return;
 
         // Capture the elapsed time since the timer started/resumed
-        duration = duration.plus(Duration.between((LocalTime) start, LocalTime.now()));
+        duration = duration.plus(Duration.between(start, LocalTime.now()));
         isRunning = false;
         start = null;       // Clear start to prevent double-adding in getTime()
     }
@@ -57,7 +57,7 @@ public class MockElapsedTimer implements ElapsedTimer {
     @Override
     public void resumeTimer() {
         // Only resume if the timer was paused.
-        if (isRunning == true) return;
+        if (isRunning) return;
 
         // Resume the timer by setting start to now without resetting duration.
         start = LocalTime.now();
@@ -69,7 +69,7 @@ public class MockElapsedTimer implements ElapsedTimer {
         // Advance timer by 30 seconds regardless of whether it's paused
         if (isRunning && start != null) {
             // Incorporate the time elapsed since the last start before advancing
-            duration = duration.plus(Duration.between((LocalTime)start, LocalTime.now()));
+            duration = duration.plus(Duration.between(start, LocalTime.now()));
             start = LocalTime.now();
         }
         duration = duration.plusSeconds(30);
@@ -80,7 +80,7 @@ public class MockElapsedTimer implements ElapsedTimer {
         // If the timer is running, add the time since the last start to duration.
         Duration currentDuration = duration;
         if (isRunning && start != null) {
-            currentDuration = currentDuration.plus(Duration.between((LocalTime) start, LocalTime.now()));
+            currentDuration = currentDuration.plus(Duration.between(start, LocalTime.now()));
         }
 
         long totalSeconds = currentDuration.getSeconds();

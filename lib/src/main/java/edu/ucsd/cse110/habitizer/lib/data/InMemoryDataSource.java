@@ -2,8 +2,8 @@ package edu.ucsd.cse110.habitizer.lib.data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-import edu.ucsd.cse110.habitizer.lib.domain.RegularTimer;
 import edu.ucsd.cse110.habitizer.lib.domain.Routine;
 import edu.ucsd.cse110.habitizer.lib.domain.RoutineTask;
 
@@ -13,11 +13,8 @@ public class InMemoryDataSource {
     public InMemoryDataSource() {
     }
 
-    ;
-
     // Todo: make this default routine have two routines (Morning and Evening)
     public void initializeDefaultRoutine() {
-        RegularTimer timer = new RegularTimer();
         Routine DEFAULT_MORNING_ROUTINE = new Routine(0, "Morning",
                 List.of(
                         new RoutineTask(0, "Wake Up", 1, false),
@@ -47,7 +44,7 @@ public class InMemoryDataSource {
 
     public Routine getRoutine(String name) {
         for (var routine : routines) {
-            if (routine.title() == name) {
+            if (Objects.equals(routine.title(), name)) {
                 return routine;
             }
         }

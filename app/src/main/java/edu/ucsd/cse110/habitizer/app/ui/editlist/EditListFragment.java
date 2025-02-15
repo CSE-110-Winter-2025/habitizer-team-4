@@ -47,7 +47,7 @@ public class EditListFragment extends Fragment {
         var modelProvider = new ViewModelProvider(modelOwner, modelFactory);
         this.activityModel = modelProvider.get(MainViewModel.class);
 
-        this.adapter = new EditListAdapter(requireContext(), List.of(), activityModel);
+        this.adapter = new EditListAdapter(requireContext(), List.of());
 
         activityModel.loadTaskList().observe(tasks -> {
             // when a change is detected by observer

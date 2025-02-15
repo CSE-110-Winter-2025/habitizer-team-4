@@ -10,10 +10,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import edu.ucsd.cse110.habitizer.app.databinding.FragmentTaskListBinding;
-import edu.ucsd.cse110.habitizer.app.ui.tasklist.TaskListAdapter;
-import edu.ucsd.cse110.habitizer.app.ui.tasklist.TaskListFragment;
-
 import java.util.ArrayList;
 import java.util.List;
 

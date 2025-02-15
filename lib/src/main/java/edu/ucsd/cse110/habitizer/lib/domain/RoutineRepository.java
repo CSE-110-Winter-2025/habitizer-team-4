@@ -1,7 +1,6 @@
 package edu.ucsd.cse110.habitizer.lib.domain;
 
 import java.util.List;
-import java.util.ArrayList;
 
 import edu.ucsd.cse110.habitizer.lib.data.InMemoryDataSource;
 

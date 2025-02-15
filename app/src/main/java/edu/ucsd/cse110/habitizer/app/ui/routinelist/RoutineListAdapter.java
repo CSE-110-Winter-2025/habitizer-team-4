@@ -20,8 +20,8 @@ import edu.ucsd.cse110.habitizer.lib.domain.Routine;
 import edu.ucsd.cse110.habitizer.app.ui.editlist.EditListFragment;
 
 public class RoutineListAdapter extends ArrayAdapter<Routine> {
-    private MainViewModel activityModel; // main view model for changing routine name subject
-    private FragmentActivity modelOwner; // model owner for swapping fragment
+    private final MainViewModel activityModel; // main view model for changing routine name subject
+    private final FragmentActivity modelOwner; // model owner for swapping fragment
     public RoutineListAdapter(Context context, List<Routine> tasks, MainViewModel activityModel, FragmentActivity modelOwner) {
         super(context, 0, new ArrayList<>(tasks));
         this.activityModel = activityModel;
@@ -30,7 +30,7 @@ public class RoutineListAdapter extends ArrayAdapter<Routine> {
 
     @NonNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(int position, View convertView, @NonNull ViewGroup parent) {
         var routine = getItem(position);
         assert routine != null;
 
@@ -76,8 +76,6 @@ public class RoutineListAdapter extends ArrayAdapter<Routine> {
         var routine = getItem(position);
         assert routine != null;
 
-        var id = routine.id();
-
-        return id;
+        return routine.id();
     }
 }

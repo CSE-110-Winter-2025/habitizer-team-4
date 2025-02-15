@@ -1,6 +1,5 @@
 package edu.ucsd.cse110.habitizer.lib.domain;
 
-import java.time.Duration;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Timer;
@@ -25,7 +24,7 @@ public class RegularTimer implements ElapsedTimer {
     @Override
     public void startTimer() {
         // Should handle starting the timer again even if the timer has already been started
-        if (isRunning == true) return;
+        if (isRunning) return;
         
         // If the timer was stopped, ensure a fresh start by leaving secondsElapsed as is (i.e. -1) so that
         // the immediate tick sets it to 0.
@@ -45,7 +44,7 @@ public class RegularTimer implements ElapsedTimer {
     @Override
     public void stopTimer() {
         // Should handle stopping the timer even if the timer hasn't been started
-        if (isRunning == false && timer == null) return;
+        if (!isRunning && timer == null) return;
 
         if (!Objects.isNull(timerTask)) timerTask.cancel();
 
@@ -70,7 +69,7 @@ public class RegularTimer implements ElapsedTimer {
     @Override
     public void resumeTimer() {
         // Only resume if the timer was paused.
-        if (isRunning == true || secondsElapsed < 0) return;
+        if (isRunning || secondsElapsed < 0) return;
 
         // Resume the timer by creating a new Timer and TimerTask without resetting secondsElapsed.
         this.timer = new Timer();
@@ -104,7 +103,7 @@ public class RegularTimer implements ElapsedTimer {
         int minutes;
         int seconds;
 
-        if (isRunning == false) {
+        if (!isRunning) {
             minutes = (secondsFinal % 3600) / 60;
             seconds = secondsFinal % 60;
         } else {

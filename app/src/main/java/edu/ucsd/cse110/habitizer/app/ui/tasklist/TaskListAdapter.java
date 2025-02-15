@@ -16,7 +16,7 @@ import edu.ucsd.cse110.habitizer.app.databinding.ListItemTaskBinding;
 import edu.ucsd.cse110.habitizer.lib.domain.RoutineTask;
 
 public class TaskListAdapter extends ArrayAdapter<RoutineTask> {
-    private MainViewModel activityModel;
+    private final MainViewModel activityModel;
     public TaskListAdapter(Context context, List<RoutineTask> tasks, MainViewModel activityModel) {
         super(context, 0, new ArrayList<>(tasks));
         this.activityModel = activityModel;
@@ -24,7 +24,7 @@ public class TaskListAdapter extends ArrayAdapter<RoutineTask> {
 
     @NonNull
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(int position, View convertView, @NonNull ViewGroup parent) {
         var task = getItem(position);
         assert task != null;
 
@@ -42,9 +42,9 @@ public class TaskListAdapter extends ArrayAdapter<RoutineTask> {
         // This if-else block updates opacity of checkmark in UI
         // so that checkmark appears when clicked
         if (task.isChecked()) {
-            binding.taskCheck.setAlpha(255);
+            binding.taskCheck.setImageAlpha(255);
         } else {
-            binding.taskCheck.setAlpha(0);
+            binding.taskCheck.setImageAlpha(0);
         }
 
         // When task is clicked, the hidden button is clicked

@@ -245,20 +245,4 @@ public class MainViewModel extends ViewModel {
         stopRoutineTimer();
         stopTaskTimer();
     }
-
-    // Start routine timer and begin elapsed time tracking
-    public void startRoutineTimer() {
-        timer.startTimer();
-        updateElapsedTime();
-    }
-    // Pause routine timer and freeze elapsed time updates
-    public void pauseRoutineTimer() {
-        timer.pauseTimer();
-        updateElapsedTime();
-    }
-    // Resume routine timer and restart elapsed time updates
-    public void resumeRoutineTimer() {
-        timer.resumeTimer();
-        updateElapsedTime();
-    }
 }

@@ -1,7 +1,6 @@
 package edu.ucsd.cse110.habitizer.app.ui.tasklist;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -79,8 +78,7 @@ public class TaskListFragment extends Fragment {
         // Pause Button functionality
         // For Resume and Pause I know you have to use R and add it to string xml but couldn't get it to work
         view.routinePauseTimeButton.setOnClickListener(v -> {
-            if (activityModel.getTimer() instanceof MockElapsedTimer) {
-                MockElapsedTimer timer = (MockElapsedTimer) activityModel.getTimer();
+            if (activityModel.getTimer() instanceof MockElapsedTimer timer) {
                 MockElapsedTimer taskTimer = (MockElapsedTimer) activityModel.getTaskTimer();
                 if (timer.isRunning()) {
                     timer.pauseTimer();
@@ -105,7 +103,6 @@ public class TaskListFragment extends Fragment {
         view.routineTotalTimeButton.setOnClickListener(v -> {
             var dialogFragment = GoalTimeDialogFragment.newInstance();
             dialogFragment.show(getParentFragmentManager(), "GoalTimeDialogFragment");
-            var time = activityModel.getGoalTime();
         });
 
         activityModel.getGoalTime().observe(time -> {
