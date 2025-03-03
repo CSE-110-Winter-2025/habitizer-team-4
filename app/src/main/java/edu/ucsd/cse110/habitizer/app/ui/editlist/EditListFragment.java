@@ -23,6 +23,7 @@ import java.util.List;
 
 import edu.ucsd.cse110.habitizer.app.MainViewModel;
 import edu.ucsd.cse110.habitizer.app.ui.routinelist.RoutineListFragment;
+import edu.ucsd.cse110.habitizer.app.ui.tasklist.TaskListAdapter;
 
 public class EditListFragment extends Fragment {
     private MainViewModel activityModel;

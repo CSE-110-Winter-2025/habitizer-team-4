@@ -25,4 +25,10 @@ public record Routine(@NonNull int id, @NonNull String title, @NonNull List<Rout
         updatedTasks.add(task);
         return new Routine(this.id, this.title, updatedTasks); // Return a new Routine object
     }
+
+    public Routine removeTask(RoutineTask task) {
+        List<RoutineTask> updatedTasks = new ArrayList<>(tasks);
+        updatedTasks.remove(task);
+        return new Routine(this.id, this.title, updatedTasks);
+    }
 }

@@ -47,5 +47,24 @@ public class RoutineRepository {
             dataSource.updateRoutine(updatedRoutine);
         }
     }
+
+    public void removeTaskFromRoutine(String routineName, int id) {
+        Routine routine = dataSource.getRoutine(routineName);
+        RoutineTask task = null;
+        if (routine != null) {
+            var tasks = dataSource.getTaskList(routineName);
+            for (var t : tasks) {
+                if (t.id() == id) {
+                    task = t;
+                }
+            }
+
+            // Create a new updated Routine instance
+            Routine updatedRoutine = routine.removeTask(task);
+
+            // Save the updated routine
+            dataSource.updateRoutine(updatedRoutine);
+        }
+    }
 }
 

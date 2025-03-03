@@ -7,6 +7,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 
 import androidx.annotation.NonNull;
+import androidx.core.util.Consumer;
 import androidx.fragment.app.FragmentActivity;
 
 import java.util.ArrayList;
