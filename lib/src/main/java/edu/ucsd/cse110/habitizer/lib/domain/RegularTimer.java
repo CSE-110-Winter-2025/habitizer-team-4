@@ -1,6 +1,5 @@
 package edu.ucsd.cse110.habitizer.lib.domain;
 
-import java.time.Duration;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Timer;
@@ -15,6 +14,7 @@ public class RegularTimer implements ElapsedTimer {
     public static final long TIMER_INTERVAL_MS = 1000; // Updates every second
 
     public RegularTimer() {
+
         this.secondsElapsed = 0;
         this.secondsFinal = 0; // Zero temporarily
         this.isRunning = false;
@@ -92,10 +92,15 @@ public class RegularTimer implements ElapsedTimer {
 
     @Override
     public void resetTimer() {
+
+        stopTimer();
+
         this.secondsElapsed = 0; // Needs to be -1 since the timer begins IMMEDIATELY (i.e. resolves to 0 when started)
         this.isRunning = false;
         this.timer = null;     // Not instantiated until we startTimer()
         this.timerTask = null; // Also not instantiated until we startTimer()
+
+        startTimer();
     }
 
     @Override
@@ -114,6 +119,16 @@ public class RegularTimer implements ElapsedTimer {
 
         // Using Locale to test whether or not this is better than just a formatted string
         return String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds);
+    }
+
+    @Override
+    public int getSeconds() {
+        return secondsElapsed;
+    }
+
+    @Override
+    public void setSeconds(int seconds) {
+        this.secondsElapsed = seconds;
     }
 
     @Override

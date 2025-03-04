@@ -8,20 +8,21 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProvider;
-
-import edu.ucsd.cse110.habitizer.app.databinding.FragmentTaskListBinding;
-import edu.ucsd.cse110.habitizer.app.ui.tasklist.TaskListAdapter;
-import edu.ucsd.cse110.habitizer.app.ui.tasklist.TaskListFragment;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import edu.ucsd.cse110.habitizer.app.MainViewModel;
+import edu.ucsd.cse110.habitizer.app.R;
 import edu.ucsd.cse110.habitizer.app.databinding.FragmentRoutineListBinding;
+import edu.ucsd.cse110.habitizer.app.ui.editlist.EditListFragment;
+import edu.ucsd.cse110.habitizer.app.ui.tasklist.TaskListFragment;
 
 public class RoutineListFragment extends Fragment {
     private MainViewModel activityModel;
+    private FragmentActivity modelOwner;
     private RoutineListAdapter adapter; // adapter for ListView
     private FragmentRoutineListBinding view;
 
@@ -38,7 +39,7 @@ public class RoutineListFragment extends Fragment {
     public void onCreate(@Nullable Bundle savedInstance) {
         super.onCreate(savedInstance);
 
-        var modelOwner = requireActivity();
+        modelOwner = requireActivity();
         var modelFactory = ViewModelProvider.Factory.from(MainViewModel.initializer);
         var modelProvider = new ViewModelProvider(modelOwner, modelFactory);
         this.activityModel = modelProvider.get(MainViewModel.class);
@@ -46,9 +47,6 @@ public class RoutineListFragment extends Fragment {
         this.adapter = new RoutineListAdapter(requireContext(), List.of(), activityModel, modelOwner);
 
         activityModel.loadRoutineList().observe(routines -> {
-            // when a change is detected by observer
-            // this will clear all contents in the adapter
-            // and then get repopulate with new data
             if (routines == null) return;
 
             adapter.clear();
@@ -62,6 +60,44 @@ public class RoutineListFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         this.view = FragmentRoutineListBinding.inflate(inflater, container, false);
         view.routineList.setAdapter(adapter);
+
+        activityModel.getCurrentRoutine().observe(routine -> {
+            if (activityModel.getIsFirstRun() && routine != null) {
+                activityModel.setIsFirstRun();
+
+                if (routine.isInProgress()) {
+
+                    var routineTimer = activityModel.getRoutineTimer();
+                    var taskTimer = activityModel.getTaskTimer();
+                    routineTimer.setSeconds(routine.routineElapsedTime());
+                    taskTimer.setSeconds(routine.taskElapsedTime());
+
+                    routineTimer.resumeTimer();
+                    taskTimer.resumeTimer();
+
+                    activityModel.startTimerUpdates();
+
+                    modelOwner.getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, TaskListFragment.newInstance())
+                            .commit();
+                } else if (routine.isInEdit()) {
+                    modelOwner.getSupportFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.fragment_container, EditListFragment.newInstance())
+                            .commit();
+                }
+            }
+        });
+
+        activityModel.loadRoutineList().observe(routines -> {
+            if (routines == null) return;
+
+            adapter.clear();
+            adapter.addAll(new ArrayList<>(routines));
+            adapter.notifyDataSetChanged();
+        });
+
         return view.getRoot();
 
     }

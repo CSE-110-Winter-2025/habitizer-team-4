@@ -50,21 +50,16 @@ public class TaskListAdapter extends ArrayAdapter<RoutineTask> {
         // When task is clicked, the hidden button is clicked
         // and the events for checking off task are called
         binding.taskButton.setOnClickListener(v -> {
-            var id = task.id();
-            activityModel.checkOffTask(id);
+            activityModel.checkOffTask(task);
         });
 
-        // When the elapsed time changes for task, update task_view text view.
-        activityModel.getTaskElapsedTime().observe(time -> {
-            if (task.id() == activityModel.getCurrentTaskId()) {
-                // sync with timer if task id is matched with current id.
-                binding.taskTime.setText(time);
-            } else {
-                // sync with elapsed time field inside RoutineTask object
-                // if it is already done or not yet started.
-                binding.taskTime.setText(task.getElapsedTime());
+        activityModel.getIsRoutineDone().observe(isRoutineDone -> {
+            if (isRoutineDone) {
+                binding.taskButton.setEnabled(false);
             }
         });
+
+        binding.taskTime.setText(activityModel.getRoundedDownTime(task.elapsedTime()));
 
         return binding.getRoot();
     }

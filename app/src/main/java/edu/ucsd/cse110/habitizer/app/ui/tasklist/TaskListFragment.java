@@ -1,7 +1,6 @@
 package edu.ucsd.cse110.habitizer.app.ui.tasklist;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +8,7 @@ import android.view.ViewGroup;
 
 import edu.ucsd.cse110.habitizer.app.R;
 import edu.ucsd.cse110.habitizer.app.ui.routinelist.RoutineListFragment;
+import edu.ucsd.cse110.habitizer.app.ui.tasklist.dialog.ConfirmInitializeRoutineFragment;
 import edu.ucsd.cse110.habitizer.app.ui.tasklist.dialog.GoalTimeDialogFragment;
 import edu.ucsd.cse110.habitizer.lib.domain.MockElapsedTimer;
 
@@ -49,11 +49,10 @@ public class TaskListFragment extends Fragment {
         this.adapter = new TaskListAdapter(requireContext(), List.of(), activityModel);
 
         activityModel.loadTaskList().observe(tasks -> {
-            // when a change is detected by observer
-            // this will clear all contents in the adapter
-            // and then get repopulate with new data
-            if (tasks == null) return;
-
+            if (tasks == null || tasks.size() == 0) {
+                activityModel.updateIsDone(true);
+                return;
+            }
             adapter.clear();
             adapter.addAll(new ArrayList<>(tasks));
             adapter.notifyDataSetChanged();
@@ -66,28 +65,29 @@ public class TaskListFragment extends Fragment {
         this.view = FragmentTaskListBinding.inflate(inflater, container, false);
         view.taskList.setAdapter(adapter);
 
-        view.routineText.setText(activityModel.getRoutineName() + " Routine");
-
-        // start two timers
-        activityModel.startRoutine();
+        activityModel.getCurrentRoutine().observe(routine -> {
+            if (routine == null) return;
+            view.routineText.setText(routine.title() + " Routine");
+        });
 
         // Bind routine_updating_timer to elapsed time from MainViewModel
-        activityModel.getElapsedTime().observe(time -> {
-            view.routineUpdatingTimer.setText(time); // Updates UI dynamically
+        activityModel.getCurrentRoutine().observe(routine -> {
+            int seconds = routine.routineElapsedTime();
+            view.routineUpdatingTimer.setText(activityModel.getRoundedDownTime(seconds));
         });
 
         // Pause Button functionality
         // For Resume and Pause I know you have to use R and add it to string xml but couldn't get it to work
         view.routinePauseTimeButton.setOnClickListener(v -> {
-            if (activityModel.getTimer() instanceof MockElapsedTimer) {
-                MockElapsedTimer timer = (MockElapsedTimer) activityModel.getTimer();
+            if (activityModel.getRoutineTimer() instanceof MockElapsedTimer) {
+                MockElapsedTimer routineTimer = (MockElapsedTimer) activityModel.getRoutineTimer();
                 MockElapsedTimer taskTimer = (MockElapsedTimer) activityModel.getTaskTimer();
-                if (timer.isRunning()) {
-                    timer.pauseTimer();
+                if (routineTimer.isRunning()) {
+                    routineTimer.pauseTimer();
                     taskTimer.pauseTimer();
                     view.routinePauseTimeButton.setText("Resume");
                 } else {
-                    timer.resumeTimer();
+                    routineTimer.resumeTimer();
                     taskTimer.resumeTimer();
                     view.routinePauseTimeButton.setText("Pause");
                 }
@@ -96,7 +96,6 @@ public class TaskListFragment extends Fragment {
 
         // Add Elapse Time Button functionality
         view.routineAdd30SecButton.setOnClickListener(v -> {
-            // Advances timer by 30 seconds
             activityModel.advanceRoutineTimer();
             activityModel.advanceTaskTimer();
         });
@@ -105,7 +104,6 @@ public class TaskListFragment extends Fragment {
         view.routineTotalTimeButton.setOnClickListener(v -> {
             var dialogFragment = GoalTimeDialogFragment.newInstance();
             dialogFragment.show(getParentFragmentManager(), "GoalTimeDialogFragment");
-            var time = activityModel.getGoalTime();
         });
 
         activityModel.getGoalTime().observe(time -> {
@@ -114,33 +112,35 @@ public class TaskListFragment extends Fragment {
 
         // End Routine Button functionality
         view.endRoutineButton.setOnClickListener(v -> {
-            activityModel.getIsRoutineDone().setValue(true); // Mark a routine as done
+            activityModel.updateIsDone(true); // Mark a routine as done
         });
 
-        // When routine is marked as done, disable button.
+        //When routine is marked as done, disable button.
         activityModel.getIsRoutineDone().observe(isTaskDone -> {
             if (isTaskDone) {
                 activityModel.endRoutine(); // Ends routine and stop timers
                 view.endRoutineButton.setText("Routine Ended"); // Updates button text
                 view.endRoutineButton.setEnabled(false); // Disables button to prevent multiple presses
+                view.routinePauseTimeButton.setEnabled(false);
+                view.routineAdd30SecButton.setEnabled(false);
             }
         });
 
         view.backButton.setOnClickListener(v -> {
-            var modelOwner = requireActivity();
-            modelOwner.getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, RoutineListFragment.newInstance())
-                    .commit();
+            var dialogFragment = ConfirmInitializeRoutineFragment.newInstance();
+            dialogFragment.show(getParentFragmentManager(), "ConfirmInitializeRoutineFragment");
         });
+
         activityModel.loadTaskList().observe(tasks -> {
             if (tasks == null) return;
+            if (tasks.size() == 0) {
+                activityModel.updateIsDone(true);
+            }
 
             adapter.clear();
             adapter.addAll(new ArrayList<>(tasks));
             adapter.notifyDataSetChanged();
         });
-
 
         return view.getRoot();
     }

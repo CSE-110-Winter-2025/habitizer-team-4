@@ -1,14 +1,12 @@
 package edu.ucsd.cse110.habitizer.app.ui.editlist;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.app.AlertDialog;
-import android.content.DialogInterface;
-import android.text.InputType;
 import android.widget.EditText;
-
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -51,9 +49,7 @@ public class EditListFragment extends Fragment {
         this.adapter = new EditListAdapter(requireContext(), List.of(), activityModel);
 
         activityModel.loadTaskList().observe(tasks -> {
-            // when a change is detected by observer
-            // this will clear all contents in the adapter
-            // and then get repopulate with new data
+            Log.d("Current Task", String.valueOf(tasks == null));
             if (tasks == null) return;
 
             adapter.clear();
@@ -68,17 +64,31 @@ public class EditListFragment extends Fragment {
         this.view = FragmentRoutineEditListBinding.inflate(inflater, container, false);
         view.routineList.setAdapter(adapter);
 
-        view.routineText.setText(activityModel.getRoutineName() + " Routine Edit");
+        activityModel.getCurrentRoutine().observe(routine -> {
+            if (routine == null) return;
+            view.routineText.setText(routine.title() + " Routine Edit");
+        });
       
         // Set up Add Task Button
         view.addTaskButton.setOnClickListener(v -> showAddTaskDialog());
         // Back Button functionality to navigate back
         view.backButton.setOnClickListener(v -> {
+            activityModel.initializeRoutineState();
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container, RoutineListFragment.newInstance()) // Ensure this is the correct fragment
                     .addToBackStack(null) // Add this fragment to the back stack
                     .commit();
+        });
+
+        activityModel.loadTaskList().observe(tasks -> {
+            if (tasks == null) return;
+
+            Log.d("Current Task", String.valueOf(tasks.size()));
+
+            adapter.clear();
+            adapter.addAll(new ArrayList<>(tasks));
+            adapter.notifyDataSetChanged();
         });
 
         return view.getRoot();
@@ -97,7 +107,7 @@ public class EditListFragment extends Fragment {
         builder.setPositiveButton("Add", (dialog, which) -> {
             String taskName = input.getText().toString().trim();
             if (!taskName.isEmpty()) {
-                activityModel.addTaskToRoutine(activityModel.getRoutineName(), taskName);
+                activityModel.addRoutineTask(taskName);
             }
         });
 

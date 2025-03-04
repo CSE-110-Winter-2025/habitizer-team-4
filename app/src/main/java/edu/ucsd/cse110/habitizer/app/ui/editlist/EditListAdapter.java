@@ -19,11 +19,8 @@ import edu.ucsd.cse110.habitizer.app.ui.editlist.dialog.EditTaskNameDialogFragme
 import edu.ucsd.cse110.habitizer.lib.domain.RoutineTask;
 
 public class EditListAdapter extends ArrayAdapter<RoutineTask> {
-    private MainViewModel activityModel; // main view model for changing routine name subject
-    private FragmentActivity modelOwner; // model owner for swapping fragment
     public EditListAdapter(Context context, List<RoutineTask> tasks, MainViewModel activityModel) {
         super(context, 0, new ArrayList<>(tasks));
-        this.activityModel = activityModel;
     }
 
     @NonNull

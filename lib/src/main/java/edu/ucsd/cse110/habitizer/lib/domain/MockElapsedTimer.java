@@ -102,6 +102,14 @@ public class MockElapsedTimer implements ElapsedTimer {
     }
 
     @Override
+    public int getSeconds() {
+        return 0;
+    }
+
+    @Override
+    public void setSeconds(int seconds) {}
+
+    @Override
     public String getRoundedDownTime() {
         Duration currentDuration = duration;
         if (isRunning && start != null) {

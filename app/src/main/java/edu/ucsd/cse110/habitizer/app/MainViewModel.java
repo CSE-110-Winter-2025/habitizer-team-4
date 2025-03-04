@@ -8,34 +8,38 @@ import android.os.Looper;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.viewmodel.ViewModelInitializer;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import edu.ucsd.cse110.habitizer.lib.domain.ElapsedTimer;
-import edu.ucsd.cse110.habitizer.lib.domain.MockElapsedTimer;
+import edu.ucsd.cse110.habitizer.lib.domain.RegularTimer;
 import edu.ucsd.cse110.habitizer.lib.domain.Routine;
 import edu.ucsd.cse110.habitizer.lib.domain.RoutineRepository;
 import edu.ucsd.cse110.habitizer.lib.domain.RoutineTask;
+import edu.ucsd.cse110.habitizer.lib.util.MutableSubject;
+import edu.ucsd.cse110.habitizer.lib.util.SimpleSubject;
 import edu.ucsd.cse110.habitizer.lib.util.Subject;
 
 public class MainViewModel extends ViewModel {
     private final RoutineRepository routineRepository;
-    private final Subject<List<RoutineTask>> taskList;
-    private final Subject<List<Routine>> routineList;
-    private int currentTaskId; // track the current task id (task the time is working)
-    private final Subject<Boolean> isRoutineDone; // track if the routine is done.
-    private Runnable currentRunner; // track runner for timer so that it can be stopped when checkoff.
-    private String routineName;
 
-    private final ElapsedTimer timer; // ElapsedTimer instance to track routine elapsed time
-    private final Subject<String> elapsedTime;  // Subject to store and update elapsed time dynamically (Lab 5)
-    private final ElapsedTimer taskTimer; // ElapsedTimer instance to track task elapsed time
-    private final Subject<String> taskElapsedTime; // Subject to store and update task elapsed time dynamically (Lab 5)
+    private MutableSubject<Routine> currentRoutine;
+    private MutableSubject<List<Routine>> routineList;
+    private MutableSubject<List<RoutineTask>> taskList;
 
-    // Subject to store and update goal time
-    private final Subject<String> goalTime;
-    private final Handler timerHandler = new Handler(Looper.getMainLooper()); // Handler for periodic timer updates (Lab 4 )
-  
-    private static final long TIMER_INTERVAL_MS = 1000; // Updates every second
+    private Routine routine;
+    private int numTasks;
+    private MutableSubject<String> routineElapsedTime;
+    private MutableSubject<String> taskElapsedTime;
+    private MutableSubject<String> goalTime;
+    private MutableSubject<Boolean> isRoutineDone;
+
+    private boolean isFirstRun;
+    private final ElapsedTimer routineTimer;
+    private final ElapsedTimer taskTimer;
+    private final Handler timerHandler = new Handler(Looper.getMainLooper());
+    private static final long TIMER_INTERVAL_MS = 1000;
 
     public static final ViewModelInitializer<MainViewModel> initializer =
             new ViewModelInitializer<>(
@@ -46,235 +50,225 @@ public class MainViewModel extends ViewModel {
                         return new MainViewModel(app.getRoutineRepository());
                     });
 
-    // Initialize elapsed time tracking and timer in constructor
     public MainViewModel(RoutineRepository routineRepository) {
         this.routineRepository = routineRepository;
-        this.taskList = new Subject<>();
-        this.routineList = new Subject<>();
 
-        this.isRoutineDone = new Subject<>(); // Initialize subject for checking the status for routine.
+        routineList = new SimpleSubject<>();
+        currentRoutine = new SimpleSubject<>();
+        taskList = new SimpleSubject<>();
 
-        this.timer = MockElapsedTimer.immediateTimer(); // Initialize MockElapsedTimer for testing
-        this.elapsedTime = new Subject<>();  // Initialize elapsed time tracking
-        this.taskTimer = MockElapsedTimer.immediateTimer(); // Initialize MockElapsedTimer for testing
-        this.taskElapsedTime = new Subject<>();  // Initialize elapsed time tracking
-        this.goalTime = new Subject<>(); // Initialize goal time tracking
+        routineElapsedTime = new SimpleSubject<>();
+        taskElapsedTime = new SimpleSubject<>();
+        goalTime = new SimpleSubject<>();
+        isRoutineDone = new SimpleSubject<>();
 
+        isFirstRun = true;
 
-        // Set initial values
-        this.currentTaskId = 0; // Initialize the first task id as 0.
-        this.routineName = "Morning";
-        goalTime.setValue("60");
+        this.routineTimer = new RegularTimer();
+        this.taskTimer = new RegularTimer();
 
-        taskList.setValue(routineRepository.getTaskList(this.routineName));
-        routineList.setValue(routineRepository.getRoutineList());
-        isRoutineDone.setValue(false);
+        routineRepository.findRoutineList().observe(routines -> {
+            if (routines == null) return;
+            routineList.setValue(routines);
+        });
 
-        // Initialize timers.
-        taskElapsedTime.setValue("-");
-        elapsedTime.setValue("-");
+        routineList.observe(routines -> {
+            if (routines == null) return;
+            for (var routine : routines){
+                routine.setTasks(routineRepository.findTaskList(routine.id()));
+                numTasks += routine.tasks().size();
+                if (routine.isInProgress() || routine.isInEdit()) {
+                    currentRoutine.setValue(routine);
+                }
+            }
+        });
+
+        currentRoutine.observe(routine -> {
+            if (routine == null) return;
+            this.routine = routine;
+
+            isRoutineDone.setValue(routine.isDone());
+            goalTime.setValue(String.valueOf(routine.goalTime()));
+            routineElapsedTime.setValue(routineTimer.getRoundedDownTime());
+            taskElapsedTime.setValue(taskTimer.getRoundedDownTime());
+            taskList.setValue(routine.tasks());
+        });
     }
 
-    public void startRoutine() {
-        // Start updating elapsed time periodically
-        timer.resetTimer();
-        timer.startTimer();
-        startTimerUpdates();
-
-        // Start updating task elapsed time periodically
-        taskTimer.resetTimer();
-        taskTimer.startTimer();
-        currentRunner = startTaskTimerUpdates();
-    }
-
-    // load a list of tasks
-    public Subject<List<RoutineTask>> loadTaskList() {
-        return taskList;
-    }
-    // load a list of routines
     public Subject<List<Routine>> loadRoutineList() {
         return routineList;
     }
-
-    // set routine name
-    public void setRoutineName(String name) {
-        this.routineName = name;
-        taskList.setValue(routineRepository.getTaskList(routineName));
+    public MutableSubject<Routine> getCurrentRoutine() {
+        return currentRoutine;
+    }
+    public Subject<List<RoutineTask>> loadTaskList() {
+        return taskList;
     }
 
-    public String getRoutineName() {
-        return routineName;
-    }
+    public void saveRoutineTask(RoutineTask newTask) {
+        var newTasks = new ArrayList<RoutineTask>();
 
-    // New Method: Add Task to Routine**
-    public void addTaskToRoutine(String routineName, String taskName) {
-        routineRepository.addTaskToRoutine(routineName, taskName);
-        taskList.setValue(routineRepository.getTaskList(routineName)); // Refresh task list
-    }
-
-    public void deleteTask(String routineName, int id) {
-        routineRepository.removeTaskFromRoutine(routineName, id);
-        taskList.setValue(routineRepository.getTaskList(routineName));
-    }
-
-    // check off a task with id
-    public void checkOffTask(int id) {
-        // if you try to check off previous tasks or if the routine is already done,
-        // it just return immediately since it is invalid.
-        if ((id < currentTaskId) || isRoutineDone.getValue()) {
-            return;
+        boolean duplicate = false;
+        for (var task : this.routine.tasks()) {
+            if (task.id() == newTask.id()) {
+                newTasks.add(newTask);
+                duplicate = true;
+            } else {
+                newTasks.add(task);
+            }
         }
+        if (!duplicate) {
+            newTask.setId(numTasks + 1);
+            newTask.setRoutineId(this.routine.id());
+            newTasks.add(newTask);
+        }
+        this.routine.setTasks(newTasks);
+        saveRoutine(this.routine);
+    }
+    public void saveRoutine(Routine routine) {
+        routineRepository.saveRoutine(routine);
+    }
 
-        // Stop the timer for previous task.
-        timerHandler.removeCallbacks(currentRunner);
+    public boolean getIsFirstRun() {
+        return isFirstRun;
+    }
+    public void setIsFirstRun() {
+        isFirstRun = false;
+    }
 
-        // Given id, find corresponding task and check it off
-        var task = routineRepository.getTaskWithIdandName(this.routineName, id);
-        task.checkOff(taskTimer.getRoundedUpTime());
+    public void checkOffTask(RoutineTask task) {
+        if (!task.isChecked()) {
+            task.checkOff(taskTimer.getSeconds());
+            saveRoutineTask(task);
 
-        // Increment current task id by 1.
-        int nextTaskId = id + 1;
-        var nextTask = routineRepository.getTaskWithIdandName(this.routineName, nextTaskId);
+            if (checkIsRoutineDone()) {
+                this.routine.setIsDone(true);
+                saveRoutine(this.routine);
+            }
 
-        // Check if there is a next task remaining
-        if (nextTask == null) {
-            isRoutineDone.setValue(true);
-        } else {
-            // reset and restart timer
+            timerHandler.removeMessages(0);
             taskTimer.resetTimer();
+
+            updateTime();
+
             taskTimer.startTimer();
-            currentRunner = startTaskTimerUpdates();
+            startTimerUpdates();
         }
-
-        // update current task id and task list
-        currentTaskId = nextTaskId;
-        taskList.setValue(routineRepository.getTaskList(this.routineName));
     }
 
-    // Get the current task id
-    public int getCurrentTaskId() {
-        return currentTaskId;
-    }
-
-    // get if a routine is already done.
-    public Subject<Boolean> getIsRoutineDone() {
-        return isRoutineDone;
-    }
-
-    // Get Timer object
-    public ElapsedTimer getTimer() {
-        return this.timer;
-    }
-    public ElapsedTimer getTaskTimer() {
-        return this.taskTimer;
-    }
-
-    // Expose elapsed time for UI updates
-    public Subject<String> getElapsedTime() {
-        return elapsedTime;
-    }
-    public Subject<String> getTaskElapsedTime() {
-        return taskElapsedTime;
-    }
-
-    // Stop timer
-    public void stopRoutineTimer() {
-        timer.stopTimer();
-        updateElapsedTime();
-    }
-    public void stopTaskTimer() {
-        taskTimer.stopTimer();
-        updateTaskElapsedTime();
-    }
-
-    // Manually advance routine timer by 30 seconds (For US3c)
-    public void advanceRoutineTimer() {
-        timer.advanceTimer();
-        updateElapsedTime();
-    }
-    public void advanceTaskTimer() {
-        taskTimer.advanceTimer();
-        updateTaskElapsedTime();
-    }
-
-    // Periodically update elapsed time every second
-    private void startTimerUpdates() {
-        timerHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                elapsedTime.setValue(timer.getRoundedDownTime());
-                timerHandler.postDelayed(this, TIMER_INTERVAL_MS);
-            }
-        }, 0);
-    }
-    public Runnable startTaskTimerUpdates() {
-        var runner = new Runnable() {
-            @Override
-            public void run() {
-                taskElapsedTime.setValue(taskTimer.getRoundedDownTime());
-                timerHandler.postDelayed(this, TIMER_INTERVAL_MS);
-            }
-        };
-        timerHandler.postDelayed(runner, 0);
-        return runner;
-    }
-
-    // Helper function to update elapsed time for UI
-    private void updateElapsedTime() {
-        elapsedTime.setValue(timer.getRoundedDownTime());
-    }
-    private void updateTaskElapsedTime() {
-        taskElapsedTime.setValue(taskTimer.getRoundedDownTime());
-    }
-
-    public void updateGoalTime(String time) {
-        System.out.println("Time received: " + time);
-        goalTime.setValue(time);
+    public boolean checkIsRoutineDone() {
+        boolean isDone = true;
+        for (var task : this.routine.tasks()) {
+            isDone = isDone && task.isChecked();
+        }
+        return isDone;
     }
 
     public Subject<String> getGoalTime() {
         return goalTime;
     }
+    public Subject<Boolean> getIsRoutineDone() {
+        return isRoutineDone;
+    }
 
-    // Updates task name when in edit task dialog
-    public void updateTaskName(String newTitle, int id) {
-        var task = routineRepository.getTaskWithIdandName(this.routineName, id);
-        if (task!= null){
-            task.updateTitle(newTitle);
-            taskList.setValue(routineRepository.getTaskList(this.routineName));
+    public void updateInProgressRoutine(Routine routine, boolean newInProgress) {
+        routine.setInProgress(newInProgress);
+        saveRoutine(routine);
+
+    }
+    public void updateInEditRoutine(Routine routine, boolean newInEdit) {
+        routine.setInEdit(newInEdit);
+        saveRoutine(routine);
+    }
+
+    private void updateTime() {
+        this.routine.setElapsedTime(routineTimer.getSeconds(), taskTimer.getSeconds());
+        saveRoutine(this.routine);
+    }
+    public void updateGoalTime(int newTime) {
+        this.routine.setGoalTime(newTime);
+        saveRoutine(this.routine);
+    }
+    public void addRoutineTask(String taskName) {
+        RoutineTask task = new RoutineTask(null, null, taskName, false, -1);
+        saveRoutineTask(task);
+    }
+    public void updateTaskName(int taskId, String newTitle) {
+        for (var task : this.routine.tasks()) {
+            if (task.id() == taskId) {
+                task.setTitle(newTitle);
+                saveRoutineTask(task);
+                return;
+            }
         }
+    }
+    public void updateIsDone(boolean newIsDone) {
+        this.routine.setIsDone(newIsDone);
+        saveRoutine(this.routine);
+    }
+
+    public void initializeRoutineState() {
+        this.routine.initialize();
+        saveRoutine(this.routine);
+        endRoutine();
+    }
+
+
+    // Get Timer object
+    public ElapsedTimer getRoutineTimer() {
+        return routineTimer;
+    }
+    public ElapsedTimer getTaskTimer() {
+        return taskTimer;
+    }
+    public String getRoundedDownTime(int seconds) {
+        int minutes = (seconds % 3600) / 60;
+
+        if (minutes == 0) {
+            return "-";
+        }
+
+        return String.format(Locale.getDefault(), "%01d", minutes);
+    }
+    public void startRoutine() {
+        // Start updating elapsed time periodically
+        routineTimer.resetTimer();
+        // Start updating task elapsed time periodically
+        taskTimer.resetTimer();
+        startTimerUpdates();
+    }
+    public void stopRoutineTimer() {
+        routineTimer.stopTimer();
+    }
+    public void stopTaskTimer() {
+        taskTimer.stopTimer();
+    }
+
+    // Manually advance routine timer by 30 seconds (For US3c)
+    public void advanceRoutineTimer() {
+        routineTimer.advanceTimer();
+        updateTime();
+    }
+    public void advanceTaskTimer() {
+        taskTimer.advanceTimer();
+        updateTime();
     }
 
     // stop two timers when finishing routine
     public void endRoutine() {
         stopRoutineTimer();
         stopTaskTimer();
+        timerHandler.removeMessages(0);
     }
 
-    // initialize all tasks
-    public void initializeTasks(String routineName) {
-        var taskList = routineRepository.getTaskList(routineName);
-        for (var task : taskList) {
-            task.initialize();
-        }
-        this.taskList.setValue(taskList);
-        isRoutineDone.setValue(false);
-        currentTaskId = 0;
-    }
-
-    // Start routine timer and begin elapsed time tracking
-    public void startRoutineTimer() {
-        timer.startTimer();
-        updateElapsedTime();
-    }
-    // Pause routine timer and freeze elapsed time updates
-    public void pauseRoutineTimer() {
-        timer.pauseTimer();
-        updateElapsedTime();
-    }
-    // Resume routine timer and restart elapsed time updates
-    public void resumeRoutineTimer() {
-        timer.resumeTimer();
-        updateElapsedTime();
+    // Periodically update elapsed time every second
+    public void startTimerUpdates() {
+        timerHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                updateTime();
+                timerHandler.postDelayed(this, TIMER_INTERVAL_MS);
+            }
+        }, 0);
     }
 }

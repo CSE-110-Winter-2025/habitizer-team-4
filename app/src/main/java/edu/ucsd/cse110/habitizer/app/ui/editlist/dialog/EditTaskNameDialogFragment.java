@@ -75,7 +75,7 @@ public class EditTaskNameDialogFragment extends DialogFragment {
         if (newTitle.isEmpty()) {
             view.editTaskName.setError("Task name cannot be empty");
         } else {
-            activityModel.updateTaskName(newTitle, taskId);
+            activityModel.updateTaskName(taskId, newTitle);
             dialog.dismiss();
         }
     }

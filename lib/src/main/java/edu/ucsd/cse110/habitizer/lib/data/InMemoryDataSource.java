@@ -1,80 +1,79 @@
 package edu.ucsd.cse110.habitizer.lib.data;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import edu.ucsd.cse110.habitizer.lib.domain.RegularTimer;
 import edu.ucsd.cse110.habitizer.lib.domain.Routine;
 import edu.ucsd.cse110.habitizer.lib.domain.RoutineTask;
+import edu.ucsd.cse110.habitizer.lib.util.MutableSubject;
+import edu.ucsd.cse110.habitizer.lib.util.SimpleSubject;
+import edu.ucsd.cse110.habitizer.lib.util.Subject;
 
 public class InMemoryDataSource {
-    private List<Routine> routines = new ArrayList<>();
+    private final Map<Integer, Routine> routinesMap = new HashMap<>();
+    private List<Routine> routinesList = List.of();
+    private MutableSubject<List<Routine>> routineSubjects = new SimpleSubject<>();
 
     public InMemoryDataSource() {
     }
 
-    ;
 
-    // Todo: make this default routine have two routines (Morning and Evening)
     public void initializeDefaultRoutine() {
-        RegularTimer timer = new RegularTimer();
-        Routine DEFAULT_MORNING_ROUTINE = new Routine(0, "Morning",
-                List.of(
-                        new RoutineTask(0, "Wake Up", 1, false),
-                        new RoutineTask(1, "Eat Breakfast", 2, false),
-                        new RoutineTask(2, "Brush Teeth", 3, false)
-                ));
+        Routine DEFAULT_MORNING_ROUTINE = new Routine(1, "Morning", 0,
+                false, false, false, 0, 0, 60);
+        DEFAULT_MORNING_ROUTINE.setTasks(List.of(
+                new RoutineTask(1, 1, "Wake Up", false, 0),
+                new RoutineTask(2, 1, "Eat Breakfast", false, 1),
+                new RoutineTask(3, 1, "Brush Teeth", false, 2)
+        ));
+        routinesMap.put(1, DEFAULT_MORNING_ROUTINE);
 
-        Routine DEFAULT_EVENING_ROUTINE = new Routine(0, "Evening",
-                List.of(
-                        new RoutineTask(0, "Eat Dinner", 1, false),
-                        new RoutineTask(1, "Brush Teeth", 2, false),
-                        new RoutineTask(2, "Go To Bed", 3, false)
-                ));
-        // Use ArrayList instead of `List.of()`, which is immutable.
-        routines = new ArrayList<>();
-        routines.add(DEFAULT_MORNING_ROUTINE);
-        routines.add(DEFAULT_EVENING_ROUTINE);
-
-
+        Routine DEFAULT_EVENING_ROUTINE = new Routine(2, "Evening", 0,
+                false, false, false, 0, 0, 60);
+        DEFAULT_EVENING_ROUTINE.setTasks(List.of(
+                new RoutineTask(4, 2, "Eat Dinner", false, 0),
+                new RoutineTask(5, 2, "Brush Teeth", false, 1),
+                new RoutineTask(6, 2, "Go To Bed", false, 2)
+        ));
+       routinesMap.put(2, DEFAULT_EVENING_ROUTINE);
+       routinesList = List.of(DEFAULT_MORNING_ROUTINE, DEFAULT_EVENING_ROUTINE);
+       routineSubjects.setValue(List.of(DEFAULT_MORNING_ROUTINE, DEFAULT_EVENING_ROUTINE));
     }
-
     public static InMemoryDataSource fromDefault() {
         var data = new InMemoryDataSource();
         data.initializeDefaultRoutine();
         return data;
     }
 
-    public Routine getRoutine(String name) {
-        for (var routine : routines) {
-            if (routine.title() == name) {
-                return routine;
+    public Subject<List<Routine>> findRoutineList() {
+        return routineSubjects;
+    }
+
+    public List<RoutineTask> findTaskList(int routineId) {
+        return routinesMap.get(routineId).tasks();
+    }
+
+    public void saveRoutine(Routine newRoutine) {
+        routinesMap.put(newRoutine.id(), newRoutine);
+
+        ArrayList<Routine> newRoutines = new ArrayList<>();
+        for (var routine : routinesList) {
+            if (routine.id() == newRoutine.id()) {
+                newRoutines.add(newRoutine);
+            } else {
+                newRoutines.add(routine);
             }
         }
-        return null;
+        routinesList = List.copyOf(newRoutines);
+        routineSubjects.setValue(newRoutines);
     }
 
-    // return List of RoutineTask of Routine object from HashMap (routines).
-    public List<Routine> getRoutineList() {
-        return routines;
-    }
-
-    // return List of RoutineTask of Routine object from HashMap (routines).
-    public List<RoutineTask> getTaskList(String name) {
-        Routine routine = getRoutine(name);
-        return (routine != null) ? routine.tasks() : new ArrayList<>();
-    }
-
-    // Made updateRoutine()
-    public void updateRoutine(Routine updatedRoutine) {
-        for (int i = 0; i < routines.size(); i++) {
-            if (routines.get(i).title().equals(updatedRoutine.title())) {
-                List<Routine> updatedRoutines = new ArrayList<>(routines);
-                updatedRoutines.set(i, updatedRoutine);
-                routines = updatedRoutines; // Ensure the reference is updated
-                return;
-            }
-        }
+    public void deleteRoutines() {
+        routinesMap.clear();
+        routinesList = List.of();
+        routineSubjects = new SimpleSubject<>();
     }
 }
 

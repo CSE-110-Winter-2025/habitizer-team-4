@@ -4,51 +4,63 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import java.util.Objects;
+
 public class RoutineTask {
-    private final @Nullable Integer id;
+    private @Nullable Integer id;
+    private Integer routineId;
     private @NonNull String title;
-    private final int priority;
     private boolean isChecked;
+    private int elapsedTime;
+    private int sortOrder;
 
-    private String elapsedTime;
-
-    public RoutineTask(@Nullable Integer id, @NonNull String title, int priority, boolean isChecked) {
+    public RoutineTask(@Nullable Integer id, Integer routineId, @NonNull String title, boolean isChecked, int sortOrder) {
         if (title.isBlank()) {
             throw new IllegalArgumentException("RoutineTask title cannot be blank");
         }
-        if (priority <= 0) {
-            throw new IllegalArgumentException("RoutineTask priority must be an integer greater than 0");
-        }
+
         this.id = id;
+        this.routineId = routineId;
         this.title = title;
-        this.priority = priority;
         this.isChecked = isChecked;
-        this.elapsedTime = "-";
+        this.elapsedTime = 0;
+        this.sortOrder = sortOrder;
     }
 
     public @Nullable Integer id() { return id; }
-    public @NonNull String title() { return title; }
+    public String title() { return title; }
+    public int sortOrder() { return sortOrder; }
+    public Integer routineId() { return this.routineId; }
+    public boolean isChecked() { return isChecked; }
+    public int elapsedTime() { return elapsedTime; }
 
-    public int priority() { return priority; }
-
-    // initialize task
     public void initialize() {
         this.isChecked = false;
-        this.elapsedTime = "-";
+        this.elapsedTime = 0;
     }
 
-    public boolean isChecked() { return isChecked; }
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-    public String getElapsedTime() { return elapsedTime; }
-
-    public void checkOff(String elapsedTime) {
+    public void setSortOrder(int sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+    public void checkOff(int elapsedTime) {
         this.isChecked = true;
-        this.elapsedTime = elapsedTime; // set elapsed time when task is done
+        setElapsedTime(elapsedTime); // set elapsed time when task is done
+    }
+
+    public void setElapsedTime(int elapsedTime) {
+        this.elapsedTime = elapsedTime;
     }
 
     // Updates task name when in edit task dialog
-    public void updateTitle(String newTitle) {
+    public void setTitle(String newTitle) {
         this.title = newTitle;
+    }
+
+    public void setRoutineId(int routineId) {
+        this.routineId = routineId;
     }
 
     @Override
@@ -58,12 +70,11 @@ public class RoutineTask {
 
         RoutineTask compare = (RoutineTask) o;
         return title.equals(compare.title()) &&
-                priority == compare.priority() &&
                 isChecked == compare.isChecked();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(title, priority, isChecked);
+        return Objects.hash(title, isChecked);
     }
 }

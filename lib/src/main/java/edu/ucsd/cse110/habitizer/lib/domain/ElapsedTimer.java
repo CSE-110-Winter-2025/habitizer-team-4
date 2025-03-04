@@ -17,6 +17,9 @@ public interface ElapsedTimer {
     // Always returns the rounded down time
     public String getRoundedDownTime();
 
+    public int getSeconds();
+    public void setSeconds(int seconds);
+
     // Allows pausing the timer
     void pauseTimer();
 
